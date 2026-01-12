@@ -1,0 +1,1070 @@
+---
+import { getPublicEnv } from '../lib/env';
+const env = getPublicEnv();
+---
+
+<section class="app" aria-label="Notes application">
+	<aside class="sidebar" aria-label="Sidebar navigation">
+		<div class="brand">
+			<div class="brandMark" aria-hidden="true">N</div>
+			<div class="brandText">
+				<div class="brandTitle">Notes</div>
+				<div class="brandSub">Ocean Professional</div>
+			</div>
+		</div>
+
+		<nav class="nav" aria-label="Primary">
+			<a class="navItem navItemActive" href="/" aria-current="page">
+				<span class="navDot" aria-hidden="true"></span>
+				All Notes
+			</a>
+			<button type="button" class="navItem navItemButton" id="btn-new-note-sidebar">
+				<span class="navDot navDotAmber" aria-hidden="true"></span>
+				New Note
+			</button>
+		</nav>
+
+		<div class="sidebarFooter">
+			<div class="metaTitle">Environment</div>
+			<dl class="meta">
+				<div class="metaRow">
+					<dt>PUBLIC_API_BASE</dt>
+					<dd><code>{env.PUBLIC_API_BASE || '—'}</code></dd>
+				</div>
+			</dl>
+			<p class="metaHint">
+				No backend calls are made yet. When ready, point <code>PUBLIC_API_BASE</code> to your API.
+			</p>
+		</div>
+	</aside>
+
+	<div class="mainCol">
+		<header class="toolbar" aria-label="Top toolbar">
+			<div class="toolbarLeft">
+				<div class="pageTitle">
+					<h1 id="page-title">Your notes</h1>
+					<p class="pageSubtitle">Create, edit, and manage notes. Stored locally in your browser.</p>
+				</div>
+			</div>
+
+			<div class="toolbarRight">
+				<div class="searchWrap">
+					<label class="srOnly" for="search">Search notes</label>
+					<input id="search" class="search" type="search" placeholder="Search notes…" autocomplete="off" />
+				</div>
+
+				<button type="button" class="btn btnPrimary" id="btn-new-note">
+					<span class="btnIcon" aria-hidden="true">＋</span>
+					New
+				</button>
+			</div>
+		</header>
+
+		<main id="main" class="content" aria-labelledby="page-title">
+			<section class="stats" aria-label="Notes summary">
+				<div class="statCard">
+					<div class="statLabel">Total</div>
+					<div class="statValue" id="stat-total">0</div>
+				</div>
+				<div class="statCard">
+					<div class="statLabel">Last updated</div>
+					<div class="statValue" id="stat-updated">—</div>
+				</div>
+			</section>
+
+			<section class="gridSection" aria-label="Notes grid">
+				<div id="empty-state" class="empty" hidden>
+					<div class="emptyIcon" aria-hidden="true">🗒️</div>
+					<h2 class="emptyTitle">No notes yet</h2>
+					<p class="emptyText">Create your first note to get started. Notes are stored on this device.</p>
+					<button type="button" class="btn btnPrimary" id="btn-empty-create">Create a note</button>
+				</div>
+
+				<div id="notes-grid" class="grid" role="list" aria-label="Notes list"></div>
+			</section>
+		</main>
+	</div>
+
+	<!-- Modal -->
+	<div id="modal-overlay" class="overlay" hidden>
+		<div
+			id="modal"
+			class="modal"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="modal-title"
+			aria-describedby="modal-desc"
+		>
+			<header class="modalHeader">
+				<div>
+					<h2 id="modal-title" class="modalTitle">New note</h2>
+					<p id="modal-desc" class="modalDesc">Add a title and content. Press Escape to close.</p>
+				</div>
+				<button type="button" class="iconBtn" id="btn-close" aria-label="Close dialog">✕</button>
+			</header>
+
+			<form id="note-form" class="form">
+				<div class="field">
+					<label for="note-title">Title</label>
+					<input id="note-title" name="title" type="text" maxlength="80" placeholder="e.g., Meeting notes" required />
+				</div>
+
+				<div class="field">
+					<label for="note-content">Content</label>
+					<textarea
+						id="note-content"
+						name="content"
+						rows="8"
+						placeholder="Write something…"
+						required
+					></textarea>
+				</div>
+
+				<div class="modalActions">
+					<button type="button" class="btn btnGhost" id="btn-cancel">Cancel</button>
+					<button type="submit" class="btn btnPrimary" id="btn-save">Save note</button>
+				</div>
+
+				<div class="dangerRow" id="danger-row" hidden>
+					<div class="dangerHint">Editing an existing note.</div>
+					<button type="button" class="btn btnDanger" id="btn-delete-in-modal">
+						Delete note
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</section>
+
+<style>
+	.srOnly {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		border: 0;
+	}
+
+	.app {
+		min-height: 100vh;
+		display: grid;
+		grid-template-columns: 280px 1fr;
+		gap: 0;
+	}
+
+	.sidebar {
+		position: sticky;
+		top: 0;
+		align-self: start;
+		height: 100vh;
+		padding: 18px;
+		border-right: 1px solid var(--op-border);
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.6));
+		backdrop-filter: blur(14px);
+	}
+
+	:global(body.dark-theme) .sidebar {
+		background: linear-gradient(180deg, rgba(17, 24, 39, 0.72), rgba(17, 24, 39, 0.55));
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 10px 14px;
+		border-radius: 14px;
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		box-shadow: var(--op-shadow-sm);
+	}
+
+	.brandMark {
+		width: 38px;
+		height: 38px;
+		border-radius: 12px;
+		display: grid;
+		place-items: center;
+		font-weight: 700;
+		color: white;
+		background: linear-gradient(135deg, var(--op-primary), rgba(37, 99, 235, 0.6));
+	}
+
+	.brandTitle {
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+
+	.brandSub {
+		font-size: 12px;
+		color: var(--op-text-muted);
+	}
+
+	.nav {
+		margin-top: 16px;
+		display: grid;
+		gap: 8px;
+	}
+
+	.navItem {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 12px;
+		border-radius: 12px;
+		border: 1px solid transparent;
+		text-decoration: none;
+		color: var(--op-text);
+		background: transparent;
+		cursor: pointer;
+		font: inherit;
+		text-align: left;
+		transition: background 0.2s ease, border-color 0.2s ease, transform 0.08s ease;
+	}
+
+	.navItem:hover {
+		background: rgba(37, 99, 235, 0.08);
+		border-color: rgba(37, 99, 235, 0.18);
+	}
+
+	.navItem:active {
+		transform: translateY(1px);
+	}
+
+	.navItemActive {
+		background: rgba(37, 99, 235, 0.12);
+		border-color: rgba(37, 99, 235, 0.22);
+	}
+
+	.navDot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: var(--op-primary);
+		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+	}
+
+	.navDotAmber {
+		background: var(--op-secondary);
+		box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+	}
+
+	.sidebarFooter {
+		margin-top: auto;
+		padding-top: 18px;
+	}
+
+	.metaTitle {
+		font-size: 12px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--op-text-muted);
+		margin-bottom: 8px;
+	}
+
+	.meta {
+		margin: 0;
+		padding: 10px 12px;
+		border-radius: 14px;
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		box-shadow: var(--op-shadow-sm);
+	}
+
+	.metaRow {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 6px;
+	}
+
+	dt {
+		font-size: 12px;
+		color: var(--op-text-muted);
+	}
+
+	dd {
+		margin: 0;
+	}
+
+	code {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+			monospace;
+		font-size: 12px;
+		padding: 2px 6px;
+		border-radius: 8px;
+		border: 1px solid var(--op-border);
+		background: rgba(17, 24, 39, 0.04);
+		color: var(--op-text);
+	}
+
+	:global(body.dark-theme) code {
+		background: rgba(255, 255, 255, 0.06);
+	}
+
+	.metaHint {
+		margin: 10px 2px 0;
+		font-size: 12px;
+		color: var(--op-text-muted);
+		line-height: 1.4;
+	}
+
+	.mainCol {
+		min-width: 0;
+		display: grid;
+		grid-template-rows: auto 1fr;
+	}
+
+	.toolbar {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		padding: 18px 22px;
+		border-bottom: 1px solid var(--op-border);
+		background: rgba(249, 250, 251, 0.72);
+		backdrop-filter: blur(14px);
+	}
+
+	:global(body.dark-theme) .toolbar {
+		background: rgba(11, 18, 32, 0.65);
+	}
+
+	.pageTitle h1 {
+		margin: 0;
+		font-size: 18px;
+		letter-spacing: -0.02em;
+	}
+
+	.pageSubtitle {
+		margin: 4px 0 0;
+		font-size: 13px;
+		color: var(--op-text-muted);
+	}
+
+	.toolbarRight {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.searchWrap {
+		position: relative;
+	}
+
+	.search {
+		width: min(420px, 46vw);
+		padding: 10px 12px;
+		border-radius: 12px;
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		color: var(--op-text);
+		box-shadow: var(--op-shadow-sm);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.search:focus {
+		border-color: rgba(37, 99, 235, 0.35);
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 10px 12px;
+		border-radius: 12px;
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		color: var(--op-text);
+		cursor: pointer;
+		font: inherit;
+		box-shadow: var(--op-shadow-sm);
+		transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease;
+	}
+
+	.btn:active {
+		transform: translateY(1px);
+	}
+
+	.btnPrimary {
+		border-color: rgba(37, 99, 235, 0.35);
+		background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(37, 99, 235, 0.75));
+		color: white;
+	}
+
+	.btnPrimary:hover {
+		border-color: rgba(37, 99, 235, 0.55);
+	}
+
+	.btnGhost {
+		background: transparent;
+	}
+
+	.btnDanger {
+		border-color: rgba(239, 68, 68, 0.4);
+		background: rgba(239, 68, 68, 0.1);
+		color: var(--op-text);
+	}
+
+	.btnIcon {
+		font-weight: 700;
+	}
+
+	.content {
+		padding: 18px 22px 30px;
+	}
+
+	.stats {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+
+	.statCard {
+		padding: 12px 14px;
+		border-radius: var(--op-radius);
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		box-shadow: var(--op-shadow-sm);
+	}
+
+	.statLabel {
+		font-size: 12px;
+		color: var(--op-text-muted);
+	}
+
+	.statValue {
+		margin-top: 6px;
+		font-size: 18px;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 14px;
+	}
+
+	.card {
+		position: relative;
+		padding: 14px 14px 12px;
+		border-radius: var(--op-radius);
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		box-shadow: var(--op-shadow-sm);
+		transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+		min-height: 140px;
+		display: grid;
+		grid-template-rows: auto 1fr auto;
+		gap: 10px;
+	}
+
+	.card:hover {
+		transform: translateY(-2px);
+		box-shadow: var(--op-shadow);
+		border-color: rgba(37, 99, 235, 0.22);
+	}
+
+	.cardTitleRow {
+		display: flex;
+		align-items: start;
+		justify-content: space-between;
+		gap: 10px;
+	}
+
+	.cardTitle {
+		margin: 0;
+		font-size: 14px;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		line-height: 1.25;
+	}
+
+	.cardContent {
+		margin: 0;
+		color: var(--op-text-muted);
+		font-size: 13px;
+		line-height: 1.45;
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		-webkit-box-orient: vertical;
+	}
+
+	.cardFooter {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		color: var(--op-text-muted);
+		font-size: 12px;
+	}
+
+	.pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 8px;
+		border-radius: 999px;
+		border: 1px solid var(--op-border);
+		background: rgba(37, 99, 235, 0.06);
+		color: var(--op-text);
+	}
+
+	.cardActions {
+		display: inline-flex;
+		gap: 8px;
+	}
+
+	.iconBtn {
+		display: inline-grid;
+		place-items: center;
+		width: 34px;
+		height: 34px;
+		border-radius: 12px;
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		color: var(--op-text);
+		cursor: pointer;
+		box-shadow: var(--op-shadow-sm);
+		transition: background 0.2s ease, border-color 0.2s ease;
+	}
+
+	.iconBtn:hover {
+		border-color: rgba(37, 99, 235, 0.22);
+		background: rgba(37, 99, 235, 0.06);
+	}
+
+	.iconBtnDanger:hover {
+		border-color: rgba(239, 68, 68, 0.35);
+		background: rgba(239, 68, 68, 0.12);
+	}
+
+	.empty {
+		padding: 26px 16px;
+		border-radius: var(--op-radius);
+		border: 1px dashed rgba(37, 99, 235, 0.35);
+		background: linear-gradient(180deg, rgba(37, 99, 235, 0.08), rgba(245, 158, 11, 0.05));
+		box-shadow: var(--op-shadow-sm);
+		text-align: center;
+	}
+
+	.emptyIcon {
+		font-size: 28px;
+		margin-bottom: 10px;
+	}
+
+	.emptyTitle {
+		margin: 0;
+		font-size: 16px;
+		letter-spacing: -0.02em;
+	}
+
+	.emptyText {
+		margin: 8px auto 14px;
+		max-width: 46ch;
+		color: var(--op-text-muted);
+		font-size: 13px;
+	}
+
+	/* Modal */
+	.overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(17, 24, 39, 0.35);
+		backdrop-filter: blur(10px);
+		display: grid;
+		place-items: center;
+		padding: 16px;
+		z-index: 2000;
+	}
+
+	:global(body.dark-theme) .overlay {
+		background: rgba(0, 0, 0, 0.55);
+	}
+
+	.modal {
+		width: min(720px, 96vw);
+		border-radius: 16px;
+		border: 1px solid var(--op-border);
+		background: var(--op-surface);
+		box-shadow: var(--op-shadow);
+		overflow: hidden;
+	}
+
+	.modalHeader {
+		display: flex;
+		align-items: start;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 16px 16px 12px;
+		border-bottom: 1px solid var(--op-border);
+	}
+
+	.modalTitle {
+		margin: 0;
+		font-size: 16px;
+		letter-spacing: -0.02em;
+	}
+
+	.modalDesc {
+		margin: 6px 0 0;
+		font-size: 12px;
+		color: var(--op-text-muted);
+	}
+
+	.form {
+		padding: 14px 16px 16px;
+		display: grid;
+		gap: 12px;
+	}
+
+	.field label {
+		display: block;
+		font-size: 12px;
+		color: var(--op-text-muted);
+		margin-bottom: 6px;
+	}
+
+	.field input,
+	.field textarea {
+		width: 100%;
+		padding: 10px 12px;
+		border-radius: 12px;
+		border: 1px solid var(--op-border);
+		background: rgba(255, 255, 255, 0.7);
+		color: var(--op-text);
+		box-shadow: var(--op-shadow-sm);
+		font: inherit;
+		transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+	}
+
+	:global(body.dark-theme) .field input,
+	:global(body.dark-theme) .field textarea {
+		background: rgba(255, 255, 255, 0.06);
+	}
+
+	.field textarea {
+		resize: vertical;
+		min-height: 160px;
+	}
+
+	.field input:focus,
+	.field textarea:focus {
+		border-color: rgba(37, 99, 235, 0.35);
+	}
+
+	.modalActions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		margin-top: 4px;
+	}
+
+	.dangerRow {
+		margin-top: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		padding-top: 12px;
+		border-top: 1px solid var(--op-border);
+	}
+
+	.dangerHint {
+		font-size: 12px;
+		color: var(--op-text-muted);
+	}
+
+	@media (max-width: 980px) {
+		.app {
+			grid-template-columns: 1fr;
+		}
+
+		.sidebar {
+			position: relative;
+			height: auto;
+			border-right: none;
+			border-bottom: 1px solid var(--op-border);
+		}
+
+		.grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 640px) {
+		.toolbar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.toolbarRight {
+			justify-content: space-between;
+		}
+
+		.search {
+			width: 100%;
+		}
+
+		.stats {
+			grid-template-columns: 1fr;
+		}
+
+		.grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>
+
+<script>
+	import { loadNotes, saveNotes, createNote, updateNote } from '../lib/notesStore';
+
+	/** @type {import('../lib/notesStore').Note[]} */
+	let notes = [];
+	let activeId = null; // editing note id or null for new
+	let lastFocusedEl = null;
+
+	const els = {
+		grid: /** @type {HTMLElement|null} */ (null),
+		empty: /** @type {HTMLElement|null} */ (null),
+		search: /** @type {HTMLInputElement|null} */ (null),
+		statTotal: /** @type {HTMLElement|null} */ (null),
+		statUpdated: /** @type {HTMLElement|null} */ (null),
+		openButtons: /** @type {HTMLElement[]} */ ([]),
+
+		overlay: /** @type {HTMLElement|null} */ (null),
+		modal: /** @type {HTMLElement|null} */ (null),
+		title: /** @type {HTMLInputElement|null} */ (null),
+		content: /** @type {HTMLTextAreaElement|null} */ (null),
+		form: /** @type {HTMLFormElement|null} */ (null),
+		modalTitle: /** @type {HTMLElement|null} */ (null),
+		btnClose: /** @type {HTMLButtonElement|null} */ (null),
+		btnCancel: /** @type {HTMLButtonElement|null} */ (null),
+		btnDeleteInModal: /** @type {HTMLButtonElement|null} */ (null),
+		dangerRow: /** @type {HTMLElement|null} */ (null),
+	};
+
+	function fmtDate(ms) {
+		try {
+			return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(ms));
+		} catch {
+			return new Date(ms).toLocaleString();
+		}
+	}
+
+	function escapeHtml(s) {
+		return String(s)
+			.replaceAll('&', '&amp;')
+			.replaceAll('<', '&lt;')
+			.replaceAll('>', '&gt;')
+			.replaceAll('"', '&quot;')
+			.replaceAll("'", '&#039;');
+	}
+
+	function truncate(s, max = 240) {
+		const v = String(s || '').trim();
+		return v.length > max ? v.slice(0, max - 1) + '…' : v;
+	}
+
+	function computeStats(filteredNotes) {
+		if (els.statTotal) els.statTotal.textContent = String(filteredNotes.length);
+
+		const latest = filteredNotes[0]?.updatedAt ?? null;
+		if (els.statUpdated) els.statUpdated.textContent = latest ? fmtDate(latest) : '—';
+	}
+
+	function getQuery() {
+		return (els.search?.value || '').trim().toLowerCase();
+	}
+
+	function getFilteredNotes() {
+		const q = getQuery();
+		if (!q) return notes;
+		return notes.filter((n) => {
+			const t = (n.title || '').toLowerCase();
+			const c = (n.content || '').toLowerCase();
+			return t.includes(q) || c.includes(q);
+		});
+	}
+
+	function render() {
+		const list = getFilteredNotes();
+		if (!els.grid || !els.empty) return;
+
+		els.grid.innerHTML = '';
+
+		if (list.length === 0) {
+			els.empty.hidden = false;
+		} else {
+			els.empty.hidden = true;
+			for (const n of list) {
+				const card = document.createElement('article');
+				card.className = 'card';
+				card.setAttribute('role', 'listitem');
+				card.dataset.id = n.id;
+
+				const titleSafe = escapeHtml(n.title || 'Untitled');
+				const contentSafe = escapeHtml(truncate(n.content || '', 260));
+				const words = (n.content || '').trim().split(/\s+/).filter(Boolean).length;
+
+				card.innerHTML = `
+					<div class="cardTitleRow">
+						<h3 class="cardTitle">${titleSafe}</h3>
+						<div class="cardActions" aria-label="Card actions">
+							<button type="button" class="iconBtn" data-action="edit" aria-label="Edit note">
+								✎
+							</button>
+							<button type="button" class="iconBtn iconBtnDanger" data-action="delete" aria-label="Delete note">
+								🗑
+							</button>
+						</div>
+					</div>
+					<p class="cardContent">${contentSafe || '<span style="opacity:0.7">No content</span>'}</p>
+					<div class="cardFooter">
+						<span class="pill" title="Word count">
+							<span aria-hidden="true">•</span>
+							${words} words
+						</span>
+						<span title="Last updated">${fmtDate(n.updatedAt)}</span>
+					</div>
+				`;
+
+				// Click on card body opens edit, but not when clicking action buttons
+				card.addEventListener('click', (e) => {
+					const target = /** @type {HTMLElement} */ (e.target);
+					if (target.closest('[data-action="edit"]') || target.closest('[data-action="delete"]')) return;
+					openEdit(n.id);
+				});
+
+				// Keyboard: Enter/Space on card opens edit
+				card.tabIndex = 0;
+				card.addEventListener('keydown', (e) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						openEdit(n.id);
+					}
+				});
+
+				card.querySelector('[data-action="edit"]')?.addEventListener('click', (e) => {
+					e.preventDefault();
+					openEdit(n.id);
+				});
+
+				card.querySelector('[data-action="delete"]')?.addEventListener('click', (e) => {
+					e.preventDefault();
+					requestDelete(n.id);
+				});
+
+				els.grid.appendChild(card);
+			}
+		}
+
+		computeStats(list);
+	}
+
+	function load() {
+		notes = loadNotes();
+		render();
+	}
+
+	function persist() {
+		saveNotes(notes);
+	}
+
+	function openModal() {
+		if (!els.overlay || !els.modal) return;
+		lastFocusedEl = document.activeElement;
+
+		els.overlay.hidden = false;
+
+		// Prevent background scroll
+		document.documentElement.style.overflow = 'hidden';
+
+		// Focus first input
+		setTimeout(() => {
+			els.title?.focus();
+			els.title?.select?.();
+		}, 0);
+	}
+
+	function closeModal() {
+		if (!els.overlay) return;
+		els.overlay.hidden = true;
+		activeId = null;
+
+		document.documentElement.style.overflow = '';
+
+		// Restore focus
+		if (lastFocusedEl && typeof lastFocusedEl.focus === 'function') {
+			lastFocusedEl.focus();
+		}
+	}
+
+	function primeModalForNew() {
+		activeId = null;
+		if (els.modalTitle) els.modalTitle.textContent = 'New note';
+		if (els.title) els.title.value = '';
+		if (els.content) els.content.value = '';
+		if (els.dangerRow) els.dangerRow.hidden = true;
+	}
+
+	function primeModalForEdit(note) {
+		activeId = note.id;
+		if (els.modalTitle) els.modalTitle.textContent = 'Edit note';
+		if (els.title) els.title.value = note.title || '';
+		if (els.content) els.content.value = note.content || '';
+		if (els.dangerRow) els.dangerRow.hidden = false;
+	}
+
+	function openNew() {
+		primeModalForNew();
+		openModal();
+	}
+
+	function openEdit(id) {
+		const note = notes.find((n) => n.id === id);
+		if (!note) return;
+		primeModalForEdit(note);
+		openModal();
+	}
+
+	function requestDelete(id) {
+		const note = notes.find((n) => n.id === id);
+		if (!note) return;
+
+		const ok = confirm(`Delete "${note.title || 'Untitled'}"? This cannot be undone.`);
+		if (!ok) return;
+
+		notes = notes.filter((n) => n.id !== id);
+		persist();
+		render();
+	}
+
+	function deleteActiveFromModal() {
+		if (!activeId) return;
+		requestDelete(activeId);
+		closeModal();
+	}
+
+	function onSubmit(e) {
+		e.preventDefault();
+		if (!els.title || !els.content) return;
+
+		const title = els.title.value.trim();
+		const content = els.content.value.trim();
+
+		if (!title || !content) {
+			// Basic validation feedback
+			if (!title) els.title.focus();
+			else els.content.focus();
+			return;
+		}
+
+		if (activeId) {
+			const existing = notes.find((n) => n.id === activeId);
+			if (!existing) return;
+
+			const updated = updateNote(existing, { title, content });
+			notes = notes.map((n) => (n.id === activeId ? updated : n));
+		} else {
+			const created = createNote({ title, content });
+			notes = [created, ...notes];
+		}
+
+		persist();
+		render();
+		closeModal();
+	}
+
+	function trapFocus(e) {
+		if (!els.modal) return;
+		if (e.key !== 'Tab') return;
+
+		const focusables = els.modal.querySelectorAll(
+			'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+		);
+
+		if (!focusables.length) return;
+
+		const first = /** @type {HTMLElement} */ (focusables[0]);
+		const last = /** @type {HTMLElement} */ (focusables[focusables.length - 1]);
+
+		if (e.shiftKey && document.activeElement === first) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && document.activeElement === last) {
+			e.preventDefault();
+			first.focus();
+		}
+	}
+
+	function init() {
+		els.grid = document.getElementById('notes-grid');
+		els.empty = document.getElementById('empty-state');
+		els.search = /** @type {HTMLInputElement|null} */ (document.getElementById('search'));
+		els.statTotal = document.getElementById('stat-total');
+		els.statUpdated = document.getElementById('stat-updated');
+
+		els.overlay = document.getElementById('modal-overlay');
+		els.modal = document.getElementById('modal');
+		els.title = /** @type {HTMLInputElement|null} */ (document.getElementById('note-title'));
+		els.content = /** @type {HTMLTextAreaElement|null} */ (document.getElementById('note-content'));
+		els.form = /** @type {HTMLFormElement|null} */ (document.getElementById('note-form'));
+		els.modalTitle = document.getElementById('modal-title');
+		els.btnClose = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-close'));
+		els.btnCancel = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-cancel'));
+		els.btnDeleteInModal = /** @type {HTMLButtonElement|null} */ (document.getElementById('btn-delete-in-modal'));
+		els.dangerRow = document.getElementById('danger-row');
+
+		els.openButtons = [
+			document.getElementById('btn-new-note'),
+			document.getElementById('btn-new-note-sidebar'),
+			document.getElementById('btn-empty-create'),
+		].filter(Boolean);
+
+		for (const b of els.openButtons) b.addEventListener('click', openNew);
+
+		els.btnClose?.addEventListener('click', closeModal);
+		els.btnCancel?.addEventListener('click', closeModal);
+		els.btnDeleteInModal?.addEventListener('click', deleteActiveFromModal);
+
+		els.form?.addEventListener('submit', onSubmit);
+
+		// overlay click closes when clicking outside dialog
+		els.overlay?.addEventListener('click', (e) => {
+			if (e.target === els.overlay) closeModal();
+		});
+
+		document.addEventListener('keydown', (e) => {
+			if (els.overlay?.hidden) return;
+
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				closeModal();
+				return;
+			}
+
+			trapFocus(e);
+		});
+
+		els.search?.addEventListener('input', () => {
+			render();
+		});
+
+		load();
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+</script>

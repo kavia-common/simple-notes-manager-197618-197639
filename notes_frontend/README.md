@@ -1,47 +1,73 @@
-# Astro Starter Kit: Minimal
+# Simple Notes App (Astro Frontend)
+
+A minimal, modern notes UI built with Astro following the **Ocean Professional** theme:
+- Primary: `#2563EB` (blue)
+- Secondary: `#F59E0B` (amber)
+- Background: `#f9fafb`
+- Surface: `#ffffff`
+- Text: `#111827`
+
+## Features
+
+- Left sidebar navigation + sticky top toolbar
+- Responsive grid of note cards
+- Create / edit / delete notes (frontend-only)
+- Notes persist in `localStorage` (no backend required)
+- Accessible modal dialog:
+  - Escape to close
+  - Focus is trapped within the dialog
+  - Clicking outside closes the dialog
+- Empty states and search filtering
+
+## Run locally (port 3000)
+
+From `notes_frontend/`:
 
 ```sh
-npm create astro@latest -- --template minimal
+npm install
+npm run dev -- --port 3000 --host 0.0.0.0
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
+Then open:
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+- http://localhost:3000
 
-## 🚀 Project Structure
+> This project’s `astro.config.mjs` is already configured to use port `3000`.
 
-Inside of your Astro project, you'll see the following folders and files:
+## Storage
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+Notes are stored in your browser under a versioned key:
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+- `notes_app.notes.v1`
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Clearing site data or localStorage will remove notes.
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Switching to a backend later (using PUBLIC_API_BASE)
 
-## 🧞 Commands
+This UI is intentionally **local-first** and does **not** call any backend yet.
 
-All commands are run from the root of the project, from a terminal:
+When you add an API later:
+1. Set `PUBLIC_API_BASE` in your environment (must be `PUBLIC_*` so it can be read in the browser).
+2. Replace the localStorage calls in:
+   - `src/lib/notesStore.ts`
+   - `src/components/NotesApp.astro` (script section)
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+Suggested future approach:
+- `GET /notes` to load
+- `POST /notes` to create
+- `PUT /notes/:id` to update
+- `DELETE /notes/:id` to delete
 
-## 👀 Want to learn more?
+Keep the same UI and swap the persistence layer behind the scenes.
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## Environment variables
+
+This frontend reads only the following (safe) public variables if present:
+- `PUBLIC_API_BASE`
+- `PUBLIC_BACKEND_URL`
+- `PUBLIC_FRONTEND_URL`
+- `PUBLIC_WS_URL`
+- `PUBLIC_NODE_ENV`
+- `PUBLIC_PORT`
+
+No backend is required to run the app.
